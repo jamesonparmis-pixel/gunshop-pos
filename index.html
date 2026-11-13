@@ -122,12 +122,24 @@
       </div>
     </div>
 
-    <!-- Live Status Indicators -->
-    <div class="flex items-center space-x-3 text-xs">
-      <!-- Database Connection Status Badge -->
-      <button onclick="openSqlSetupModal()" id="dbStatusBadge" class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-slate-800 hover:bg-slate-750 border border-slate-700 transition cursor-pointer" title="Click to view Supabase connection details">
-        <span id="dbStatusDot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
-        <span id="dbStatusText" class="font-mono text-[11px] text-slate-300">Checking DB...</span>
+    <!-- Live Status & Database Engine Switcher -->
+    <div class="flex items-center space-x-2.5 text-xs">
+      <!-- Database Engine Switcher (Supabase Cloud <-> XAMPP MySQL) -->
+      <div class="flex items-center bg-slate-950 p-0.5 rounded-xl border border-slate-700 shadow-inner">
+        <button type="button" onclick="setDatabaseMode('supabase')" id="dbModeBtn-supabase" class="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20" title="Switch to Supabase Cloud Database">
+          <i class="fa-solid fa-cloud text-amber-400"></i>
+          <span>Supabase</span>
+        </button>
+        <button type="button" onclick="setDatabaseMode('xampp')" id="dbModeBtn-xampp" class="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition" title="Switch to XAMPP Local MySQL Database">
+          <i class="fa-solid fa-server text-cyan-400"></i>
+          <span>XAMPP</span>
+        </button>
+      </div>
+
+      <!-- Database Status Badge -->
+      <button onclick="openSqlSetupModal()" id="dbStatusBadge" class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-slate-800 hover:bg-slate-750 border border-slate-700 transition cursor-pointer" title="Click to view Database engine details & schemas">
+        <span id="dbStatusDot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+        <span id="dbStatusText" class="font-mono text-[11px] text-slate-300">Supabase Cloud</span>
         <i class="fa-solid fa-database text-[10px] text-slate-400 ml-1"></i>
       </button>
 
@@ -1684,7 +1696,7 @@
   </div>
 
 
-  <!-- MODAL 8: SUPABASE BACKEND SETUP & SQL RUNNER MODAL -->
+  <!-- MODAL 8: DUAL-DATABASE CONTROLLER & SQL RUNNER MODAL -->
   <div id="sqlSetupModal" class="hidden fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
     <div class="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 overflow-hidden flex flex-col max-h-[90vh]">
       <div class="flex items-center justify-between pb-3 border-b border-slate-800">
@@ -1693,49 +1705,141 @@
             <i class="fa-solid fa-database"></i>
           </div>
           <div>
-            <h3 class="font-extrabold text-base text-white">Supabase Database Integration</h3>
-            <p class="text-[11px] text-slate-400">Project: yleuvjlqnjdzdeghppqh • REST URL & Anon Key Connected</p>
+            <h3 class="font-extrabold text-base text-white">Database Engine Controller</h3>
+            <p class="text-[11px] text-slate-400">Switch between Supabase Cloud and XAMPP MySQL in real-time</p>
           </div>
         </div>
         <button onclick="closeSqlSetupModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
       </div>
 
-      <div class="my-4 overflow-y-auto space-y-4 pr-1 text-xs">
+      <!-- Navigation Tabs for Database Modal -->
+      <div class="flex items-center space-x-2 pt-3 border-b border-slate-800 pb-2">
+        <button type="button" onclick="switchSqlModalTab('supabase')" id="sqlTabBtn-supabase" class="sql-tab-btn px-3 py-1.5 rounded-lg text-xs font-bold transition bg-amber-500 text-slate-950">
+          <i class="fa-solid fa-cloud mr-1.5"></i>Supabase Cloud (PostgreSQL)
+        </button>
+        <button type="button" onclick="switchSqlModalTab('xampp')" id="sqlTabBtn-xampp" class="sql-tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">
+          <i class="fa-solid fa-server mr-1.5 text-cyan-400"></i>XAMPP Local (MySQL)
+        </button>
+        <button type="button" onclick="switchSqlModalTab('sync')" id="sqlTabBtn-sync" class="sql-tab-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">
+          <i class="fa-solid fa-arrows-rotate mr-1.5 text-emerald-400"></i>Sync & Clone Data
+        </button>
+      </div>
+
+      <div class="my-4 overflow-y-auto space-y-4 pr-1 text-xs flex-1">
+        <!-- Live Connection Status Alert -->
         <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5">
           <div class="flex items-center justify-between">
-            <span class="font-bold text-slate-200">Live Status:</span>
-            <span id="modalDbStatus" class="font-mono text-amber-400 font-semibold">Testing Connection...</span>
+            <span class="font-bold text-slate-200">Active Engine:</span>
+            <span id="modalDbStatus" class="font-mono text-emerald-400 font-bold">Checking Connection...</span>
           </div>
           <div class="text-[11px] text-slate-400 leading-relaxed">
-            The app features a <strong>dual-storage failover engine</strong>. It connects to your remote Supabase cloud database automatically. If tables are not yet created in PostgreSQL, it operates with local persistent storage so you can test and use the system immediately.
+            The application features a <strong>dual-engine database architecture</strong>. You can switch freely between <strong>Supabase Cloud</strong> and <strong>XAMPP Local MySQL</strong> with the header toggle or buttons below.
           </div>
         </div>
 
-        <div>
-          <div class="flex items-center justify-between mb-1.5">
-            <label class="font-bold text-slate-200">Supabase SQL Schema Script (schema.sql)</label>
-            <button onclick="copySqlToClipboard()" class="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px] rounded flex items-center space-x-1">
-              <i class="fa-solid fa-copy"></i>
-              <span id="copyBtnText">Copy SQL Script</span>
+        <!-- TAB 1: SUPABASE CLOUD (PostgreSQL) -->
+        <div id="sqlTabPane-supabase" class="space-y-3">
+          <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-1 text-slate-300">
+            <div class="flex justify-between font-mono text-[11px]">
+              <span class="text-slate-400">Supabase Project Ref:</span>
+              <span class="text-amber-400 font-bold">yleuvjlqnjdzdeghppqh</span>
+            </div>
+            <div class="flex justify-between font-mono text-[11px]">
+              <span class="text-slate-400">REST API URL:</span>
+              <span class="text-slate-300 truncate">https://yleuvjlqnjdzdeghppqh.supabase.co/rest/v1/</span>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="font-bold text-slate-200">Supabase SQL Schema Script (schema.sql)</label>
+              <button onclick="copySqlToClipboard('sqlCodeSnippet')" class="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px] rounded flex items-center space-x-1">
+                <i class="fa-solid fa-copy"></i>
+                <span>Copy Supabase SQL</span>
+              </button>
+            </div>
+            <textarea id="sqlCodeSnippet" readonly rows="5" class="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl font-mono text-[10px] text-emerald-400 focus:outline-none select-all"></textarea>
+          </div>
+
+          <div class="flex items-center space-x-2 pt-1">
+            <button onclick="setDatabaseMode('supabase')" class="flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl transition flex items-center justify-center space-x-2">
+              <i class="fa-solid fa-check"></i>
+              <span>Activate Supabase Cloud Mode</span>
+            </button>
+            <button onclick="DB.syncFromSupabase()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl border border-slate-700 transition">
+              <i class="fa-solid fa-arrows-rotate mr-1"></i>Refresh
             </button>
           </div>
-          <p class="text-[11px] text-slate-400 mb-2">
-            To create all PostgreSQL tables in Supabase: open your <a href="https://supabase.com/dashboard/project/yleuvjlqnjdzdeghppqh/sql/new" target="_blank" class="text-amber-400 underline">Supabase SQL Editor</a>, paste the SQL below, and click <strong>Run</strong>!
-          </p>
-          <div class="relative">
-            <textarea id="sqlCodeSnippet" readonly rows="7" class="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl font-mono text-[10px] text-emerald-400 focus:outline-none select-all"></textarea>
+        </div>
+
+        <!-- TAB 2: XAMPP LOCAL (MySQL / MariaDB) -->
+        <div id="sqlTabPane-xampp" class="hidden space-y-3">
+          <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-1 text-slate-300">
+            <div class="flex justify-between font-mono text-[11px]">
+              <span class="text-slate-400">Database Name:</span>
+              <span class="text-cyan-400 font-bold">pos_gunshop</span>
+            </div>
+            <div class="flex justify-between font-mono text-[11px]">
+              <span class="text-slate-400">XAMPP Server Host:</span>
+              <span class="text-slate-200">127.0.0.1:3306 (user: root, no password)</span>
+            </div>
+            <div class="flex justify-between font-mono text-[11px]">
+              <span class="text-slate-400">API Endpoint:</span>
+              <span class="text-slate-200 truncate">api.php</span>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <label class="font-bold text-slate-200">XAMPP MySQL Database Schema (database_xampp.sql)</label>
+              <button onclick="copySqlToClipboard('sqlXamppSnippet')" class="px-2.5 py-1 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-[11px] rounded flex items-center space-x-1">
+                <i class="fa-solid fa-copy"></i>
+                <span>Copy MySQL SQL</span>
+              </button>
+            </div>
+            <p class="text-[10px] text-slate-400 mb-1.5">
+              In phpMyAdmin (<a href="http://localhost/phpmyadmin" target="_blank" class="text-cyan-400 underline">http://localhost/phpmyadmin</a>): click <strong>Import</strong>, select <code>database_xampp.sql</code>, and click <strong>Go</strong>!
+            </p>
+            <textarea id="sqlXamppSnippet" readonly rows="5" class="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl font-mono text-[10px] text-cyan-400 focus:outline-none select-all"></textarea>
+          </div>
+
+          <div class="flex items-center space-x-2 pt-1">
+            <button onclick="setDatabaseMode('xampp')" class="flex-1 py-2.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-xl transition flex items-center justify-center space-x-2">
+              <i class="fa-solid fa-check"></i>
+              <span>Activate XAMPP MySQL Mode</span>
+            </button>
+            <button onclick="DB.syncFromXampp()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl border border-slate-700 transition">
+              <i class="fa-solid fa-arrows-rotate mr-1"></i>Refresh
+            </button>
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
-          <button onclick="testSupabaseConnection()" class="py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl border border-slate-700 transition flex items-center justify-center space-x-2">
-            <i class="fa-solid fa-arrows-rotate text-cyan-400"></i>
-            <span>Test & Reconnect Supabase</span>
-          </button>
-          <button onclick="syncLocalToSupabase()" class="py-2.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 font-bold rounded-xl border border-emerald-500/40 transition flex items-center justify-center space-x-2">
-            <i class="fa-solid fa-cloud-arrow-up"></i>
-            <span>Push Local Data to Supabase</span>
-          </button>
+        <!-- TAB 3: DATA TRANSFER & SYNC -->
+        <div id="sqlTabPane-sync" class="hidden space-y-3">
+          <div class="p-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-300 space-y-1">
+            <h4 class="font-bold text-xs text-amber-400">Clone & Synchronize Between Databases</h4>
+            <p class="text-[11px] text-slate-400 leading-relaxed">
+              Ensure both your Supabase cloud database and your local XAMPP MySQL database have identical product catalogs, accounts, and transactions with 1 click.
+            </p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 pt-2">
+            <button onclick="cloneDataBetweenDatabases('to_xampp')" class="p-4 bg-slate-950 border border-slate-800 hover:border-cyan-500/60 rounded-xl text-left transition group">
+              <div class="text-xs font-bold text-cyan-400 mb-1 flex items-center space-x-1.5">
+                <i class="fa-solid fa-arrow-down text-sm"></i>
+                <span>Supabase ➔ XAMPP MySQL</span>
+              </div>
+              <p class="text-[10px] text-slate-400">Copies all cloud Supabase records into your local MySQL database.</p>
+            </button>
+
+            <button onclick="cloneDataBetweenDatabases('to_supabase')" class="p-4 bg-slate-950 border border-slate-800 hover:border-amber-500/60 rounded-xl text-left transition group">
+              <div class="text-xs font-bold text-amber-400 mb-1 flex items-center space-x-1.5">
+                <i class="fa-solid fa-arrow-up text-sm"></i>
+                <span>XAMPP MySQL ➔ Supabase</span>
+              </div>
+              <p class="text-[10px] text-slate-400">Pushes all local XAMPP records into your Supabase Cloud database.</p>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1746,7 +1850,6 @@
       </div>
     </div>
   </div>
-
 
   <!-- MODAL 9: KEYBOARD SHORTCUTS CHEAT SHEET (F12) -->
   <div id="shortcutsModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -1864,10 +1967,10 @@
 // ARMORTECH DEFENSE & TACTICAL POS (GUN SHOP)
 // Owners: Maria Labay, Denz Sacay, Jameson Parmis
 // Computer Accounting & Inventory System
-// Real-Time Supabase Cloud REST Backend Integration
+// Dual-Engine Database Controller: Supabase Cloud & XAMPP MySQL
 // ====================================================================
 
-// --- 1. CONFIGURATION & SUPABASE INITIALIZATION ---
+// --- 1. CONFIGURATION ---
 const SUPABASE_CONFIG = {
   url: 'https://yleuvjlqnjdzdeghppqh.supabase.co',
   restUrl: 'https://yleuvjlqnjdzdeghppqh.supabase.co/rest/v1',
@@ -1876,17 +1979,24 @@ const SUPABASE_CONFIG = {
   storeName: 'ARMORTECH DEFENSE & TACTICAL POS'
 };
 
+const XAMPP_CONFIG = {
+  apiUrl: (window.location.origin.includes('localhost') && window.location.pathname.includes('pos%20gunshop'))
+    ? 'api.php'
+    : 'http://localhost/pos%20gunshop/api.php',
+  dbName: 'pos_gunshop'
+};
+
 let supabaseClient = null;
 if (window.supabase && window.supabase.createClient) {
   try {
     supabaseClient = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.key);
   } catch (err) {
-    console.warn('Supabase Client initialization note:', err);
+    console.warn('Supabase Client note:', err);
   }
 }
 
-// REST API Helper for robust direct fetches/writes
-const API = {
+// REST API Helper for Supabase Cloud
+const SupabaseAPI = {
   headers(extra = {}) {
     return {
       'apikey': SUPABASE_CONFIG.key,
@@ -1900,7 +2010,7 @@ const API = {
     const res = await fetch(`${SUPABASE_CONFIG.restUrl}/${table}?${query}`, {
       headers: this.headers()
     });
-    if (!res.ok) throw new Error(`GET /${table} failed with ${res.status}`);
+    if (!res.ok) throw new Error(`Supabase GET /${table} failed (${res.status})`);
     return await res.json();
   },
   async insert(table, data) {
@@ -1909,10 +2019,7 @@ const API = {
       headers: this.headers(),
       body: JSON.stringify(Array.isArray(data) ? data : [data])
     });
-    if (!res.ok) {
-      const errTxt = await res.text();
-      throw new Error(`POST /${table} failed (${res.status}): ${errTxt}`);
-    }
+    if (!res.ok) throw new Error(`Supabase POST /${table} failed (${res.status})`);
     return await res.json();
   },
   async upsert(table, data) {
@@ -1921,10 +2028,7 @@ const API = {
       headers: this.headers({ 'Prefer': 'resolution=merge-duplicates,return=representation' }),
       body: JSON.stringify(Array.isArray(data) ? data : [data])
     });
-    if (!res.ok) {
-      const errTxt = await res.text();
-      throw new Error(`UPSERT /${table} failed (${res.status}): ${errTxt}`);
-    }
+    if (!res.ok) throw new Error(`Supabase UPSERT /${table} failed (${res.status})`);
     return await res.json();
   },
   async update(table, filterCol, filterVal, data) {
@@ -1933,15 +2037,62 @@ const API = {
       headers: this.headers(),
       body: JSON.stringify(data)
     });
-    if (!res.ok) {
-      const errTxt = await res.text();
-      throw new Error(`PATCH /${table} failed (${res.status}): ${errTxt}`);
-    }
+    if (!res.ok) throw new Error(`Supabase PATCH /${table} failed (${res.status})`);
     return await res.json();
   }
 };
 
-// --- 2. AUDIO SYNTHESIZER (WEB AUDIO API) ---
+// REST API Helper for XAMPP Local MySQL (via api.php)
+const XamppAPI = {
+  async get(table) {
+    const res = await fetch(`${XAMPP_CONFIG.apiUrl}?table=${encodeURIComponent(table)}`);
+    if (!res.ok) throw new Error(`XAMPP GET /${table} failed (${res.status})`);
+    return await res.json();
+  },
+  async post(table, data) {
+    const res = await fetch(`${XAMPP_CONFIG.apiUrl}?table=${encodeURIComponent(table)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error(`XAMPP POST /${table} failed (${res.status})`);
+    return await res.json();
+  },
+  async patch(table, field, value, data) {
+    const res = await fetch(`${XAMPP_CONFIG.apiUrl}?table=${encodeURIComponent(table)}&field=${encodeURIComponent(field)}&value=${encodeURIComponent(value)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error(`XAMPP PATCH /${table} failed (${res.status})`);
+    return await res.json();
+  },
+  async sale(sale, items) {
+    const res = await fetch(`${XAMPP_CONFIG.apiUrl}?action=sale`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sale, items })
+    });
+    if (!res.ok) throw new Error(`XAMPP Sale failed (${res.status})`);
+    return await res.json();
+  },
+  async restock(log) {
+    const res = await fetch(`${XAMPP_CONFIG.apiUrl}?action=restock`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ log })
+    });
+    if (!res.ok) throw new Error(`XAMPP Restock failed (${res.status})`);
+    return await res.json();
+  },
+  async status() {
+    const res = await fetch(`${XAMPP_CONFIG.apiUrl}?action=status`);
+    if (!res.ok) throw new Error(`XAMPP Status check failed (${res.status})`);
+    return await res.json();
+  }
+};
+
+// --- 2. AUDIO SYNTHESIZER ---
 let audioContext = null;
 let soundEnabled = true;
 
@@ -2027,7 +2178,7 @@ const DEFAULT_PRODUCTS = [
   { id: 'prod_05', barcode: '200101', name: 'Armscor 9mm Luger FMJ 115gr (Box of 50)', category: 'Ammunition', specs: '115 Grain Full Metal Jacket, Brass Casing', cost_price: 1100, selling_price: 1650, stock_qty: 85, low_stock_threshold: 20, supplier_id: 'sup_01', supplier_name: 'Armscor Global Defense, Inc.', expiry_date: '2029-12-31', status: 'active' },
   { id: 'prod_06', barcode: '200102', name: 'Federal .45 ACP Hydra-Shok JHP (Box of 20)', category: 'Ammunition', specs: '230 Grain Jacketed Hollow Point Defense', cost_price: 1850, selling_price: 2750, stock_qty: 3, low_stock_threshold: 10, supplier_id: 'sup_03', supplier_name: 'Federal Premium Ammunition Phils', expiry_date: '2030-06-30', status: 'active' },
   { id: 'prod_07', barcode: '200103', name: 'Federal 12-Gauge 00 Buckshot (Box of 25)', category: 'Ammunition', specs: '2-3/4" 9 Pellets High Velocity', cost_price: 1400, selling_price: 2100, stock_qty: 24, low_stock_threshold: 10, supplier_id: 'sup_03', supplier_name: 'Federal Premium Ammunition Phils', expiry_date: '2028-10-15', status: 'active' },
-  { id: 'prod_08', barcode: '200104', name: 'Armscor 5.56x45mm NATO FMJ 55gr (Box of 20)', category: 'Ammunition', specs: '55gr Full Metal Jacket Mil-Spec', cost_price: 650, selling_price: 950, stock_qty: 110, low_stock_threshold: 25, supplier_id: 'sup_01', supplier_name: 'Armscor Global Defense, Inc.', expiry_date: '2031-01-01', status: 'active' },
+  { id: 'prod_08', barcode: '200104', name: 'Armscor 5.56x45mm NATO FMJ 55gr (Box of 20)', category: 'Ammunition', specs: '55gr Full Metal Jacket Mil-Spec', cost_price: 650, selling_price: 950, stock_qty: 115, low_stock_threshold: 25, supplier_id: 'sup_01', supplier_name: 'Armscor Global Defense, Inc.', expiry_date: '2031-01-01', status: 'active' },
   { id: 'prod_09', barcode: '300101', name: 'Holosun HS507C X2 Red Dot Sight', category: 'Optics', specs: 'Solar Failsafe, Shake Awake, 2 MOA Dot', cost_price: 16000, selling_price: 21500, stock_qty: 7, low_stock_threshold: 2, supplier_id: 'sup_04', supplier_name: 'Tactical Gear & Optics Corp.', expiry_date: null, status: 'active' },
   { id: 'prod_10', barcode: '300102', name: 'Streamlight TLR-1 HL Tactical Light 1000lm', category: 'Optics', specs: '1000 Lumens Weapon Light, Picatinny Mount', cost_price: 8500, selling_price: 12000, stock_qty: 9, low_stock_threshold: 3, supplier_id: 'sup_04', supplier_name: 'Tactical Gear & Optics Corp.', expiry_date: null, status: 'active' },
   { id: 'prod_11', barcode: '400101', name: 'Kydex IWB Concealment Holster for Glock 19', category: 'Tactical Gear', specs: 'Right Hand, Adjustable Cant & Retention', cost_price: 1200, selling_price: 1950, stock_qty: 18, low_stock_threshold: 5, supplier_id: 'sup_04', supplier_name: 'Tactical Gear & Optics Corp.', expiry_date: null, status: 'active' },
@@ -2053,9 +2204,10 @@ const DEFAULT_SETTINGS = {
   maribank_number: '0919-777-GUNS'
 };
 
-// --- 4. REAL-TIME DATA MANAGER (SUPABASE + LOCAL CACHE) ---
+// --- 4. DUAL-DATABASE REPOSITORY LAYER ---
 const DB = {
-  isSupabaseLive: false,
+  mode: localStorage.getItem('armortech_db_mode') || 'supabase', // 'supabase' or 'xampp'
+  isLive: false,
 
   init() {
     if (!localStorage.getItem('armortech_accounts')) localStorage.setItem('armortech_accounts', JSON.stringify(DEFAULT_ACCOUNTS));
@@ -2089,93 +2241,182 @@ const DB = {
     }
   },
 
-  // Pull all live data directly from Supabase Cloud
+  // Pull live data from active database
+  async syncActiveDatabase() {
+    if (this.mode === 'xampp') {
+      return await this.syncFromXampp();
+    } else {
+      return await this.syncFromSupabase();
+    }
+  },
+
+  // 4A. Sync from Supabase Cloud
   async syncFromSupabase() {
     try {
-      // 1. Products
-      const products = await API.get('products', 'select=*&order=name.asc');
+      const products = await SupabaseAPI.get('products', 'select=*&order=name.asc');
       if (Array.isArray(products) && products.length > 0) {
+        products.forEach(p => {
+          p.selling_price = Number(p.selling_price) || 0;
+          p.cost_price = Number(p.cost_price) || 0;
+          p.stock_qty = Number(p.stock_qty) || 0;
+          p.low_stock_threshold = Number(p.low_stock_threshold) || 5;
+        });
         this.setAll('products', products);
       }
 
-      // 2. Accounts
-      const accounts = await API.get('accounts', 'select=*&order=username.asc');
-      if (Array.isArray(accounts) && accounts.length > 0) {
-        this.setAll('accounts', accounts);
-      }
+      const accounts = await SupabaseAPI.get('accounts', 'select=*&order=username.asc');
+      if (Array.isArray(accounts) && accounts.length > 0) this.setAll('accounts', accounts);
 
-      // 3. Suppliers
-      const suppliers = await API.get('suppliers', 'select=*&order=name.asc');
-      if (Array.isArray(suppliers) && suppliers.length > 0) {
-        this.setAll('suppliers', suppliers);
-      }
+      const suppliers = await SupabaseAPI.get('suppliers', 'select=*&order=name.asc');
+      if (Array.isArray(suppliers) && suppliers.length > 0) this.setAll('suppliers', suppliers);
 
-      // 4. Sales & Sale Items
-      const sales = await API.get('sales', 'select=*&order=created_at.desc');
-      const saleItems = await API.get('sale_items', 'select=*');
+      const sales = await SupabaseAPI.get('sales', 'select=*&order=created_at.desc');
+      const saleItems = await SupabaseAPI.get('sale_items', 'select=*');
       if (Array.isArray(sales)) {
         const enrichedSales = sales.map(s => {
           const items = Array.isArray(saleItems) ? saleItems.filter(i => i.sale_id === s.id) : [];
-          return { ...s, items };
+          return {
+            ...s,
+            subtotal: Number(s.subtotal) || 0,
+            tax_amount: Number(s.tax_amount) || 0,
+            discount_amount: Number(s.discount_amount) || 0,
+            grand_total: Number(s.grand_total) || 0,
+            amount_tendered: Number(s.amount_tendered) || 0,
+            change_due: Number(s.change_due) || 0,
+            items
+          };
         });
         this.setAll('sales', enrichedSales);
       }
 
-      // 5. Payroll
-      const payroll = await API.get('payroll', 'select=*&order=period_end.desc');
-      if (Array.isArray(payroll) && payroll.length > 0) {
-        this.setAll('payroll', payroll);
-      }
+      const payroll = await SupabaseAPI.get('payroll', 'select=*&order=period_end.desc');
+      if (Array.isArray(payroll) && payroll.length > 0) this.setAll('payroll', payroll);
 
-      // 6. Restock Logs
       try {
-        const restocks = await API.get('restock_logs', 'select=*&order=date.desc');
-        if (Array.isArray(restocks)) this.setAll('restocks', restocks);
-      } catch(e) {}
-
-      // 7. System Logs
-      try {
-        const logs = await API.get('system_logs', 'select=*&order=timestamp.desc&limit=50');
+        const logs = await SupabaseAPI.get('system_logs', 'select=*&order=timestamp.desc&limit=50');
         if (Array.isArray(logs) && logs.length > 0) this.setAll('logs', logs);
       } catch(e) {}
 
-      // 8. Settings
       try {
-        const settings = await API.get('settings', 'select=*&limit=1');
+        const settings = await SupabaseAPI.get('settings', 'select=*&limit=1');
         if (Array.isArray(settings) && settings.length > 0) {
           this.setAll('settings', settings[0]);
           STATE.currentTaxRate = Number(settings[0].tax_rate || 12);
         }
       } catch(e) {}
 
-      this.isSupabaseLive = true;
-      this.updateStatusUI(true);
+      this.isLive = true;
+      this.updateStatusUI(true, 'supabase');
       return true;
     } catch(err) {
       console.warn('Supabase sync warning:', err.message);
-      this.isSupabaseLive = false;
-      this.updateStatusUI(false);
+      this.isLive = false;
+      this.updateStatusUI(false, 'supabase');
       return false;
     }
   },
 
-  updateStatusUI(isLive) {
+  // 4B. Sync from XAMPP Local MySQL
+  async syncFromXampp() {
+    try {
+      const status = await XamppAPI.status();
+      if (!status || status.status !== 'connected') throw new Error('XAMPP MySQL is unreachable');
+
+      const products = await XamppAPI.get('products');
+      if (Array.isArray(products) && products.length > 0) {
+        products.forEach(p => {
+          p.selling_price = Number(p.selling_price) || 0;
+          p.cost_price = Number(p.cost_price) || 0;
+          p.stock_qty = Number(p.stock_qty) || 0;
+          p.low_stock_threshold = Number(p.low_stock_threshold) || 5;
+        });
+        this.setAll('products', products);
+      }
+
+      const accounts = await XamppAPI.get('accounts');
+      if (Array.isArray(accounts) && accounts.length > 0) this.setAll('accounts', accounts);
+
+      const suppliers = await XamppAPI.get('suppliers');
+      if (Array.isArray(suppliers) && suppliers.length > 0) this.setAll('suppliers', suppliers);
+
+      const sales = await XamppAPI.get('sales');
+      if (Array.isArray(sales)) {
+        sales.forEach(s => {
+          s.subtotal = Number(s.subtotal) || 0;
+          s.tax_amount = Number(s.tax_amount) || 0;
+          s.discount_amount = Number(s.discount_amount) || 0;
+          s.grand_total = Number(s.grand_total) || 0;
+          s.amount_tendered = Number(s.amount_tendered) || 0;
+          s.change_due = Number(s.change_due) || 0;
+        });
+        this.setAll('sales', sales);
+      }
+
+      const payroll = await XamppAPI.get('payroll');
+      if (Array.isArray(payroll) && payroll.length > 0) this.setAll('payroll', payroll);
+
+      const logs = await XamppAPI.get('system_logs');
+      if (Array.isArray(logs) && logs.length > 0) this.setAll('logs', logs);
+
+      const settings = await XamppAPI.get('settings');
+      if (Array.isArray(settings) && settings.length > 0) {
+        this.setAll('settings', settings[0]);
+        STATE.currentTaxRate = Number(settings[0].tax_rate || 12);
+      }
+
+      this.isLive = true;
+      this.updateStatusUI(true, 'xampp');
+      return true;
+    } catch(err) {
+      console.warn('XAMPP sync error:', err.message);
+      this.isLive = false;
+      this.updateStatusUI(false, 'xampp');
+      return false;
+    }
+  },
+
+  updateStatusUI(isLive, mode) {
     const dot = document.getElementById('dbStatusDot');
     const text = document.getElementById('dbStatusText');
     const modalStatus = document.getElementById('modalDbStatus');
 
+    // Switch buttons styling
+    const btnSupabase = document.getElementById('dbModeBtn-supabase');
+    const btnXampp = document.getElementById('dbModeBtn-xampp');
+
+    if (btnSupabase && btnXampp) {
+      if (mode === 'supabase') {
+        btnSupabase.className = 'flex items-center space-x-1.5 px-3 py-1 rounded-lg text-xs font-bold transition bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20';
+        btnXampp.className = 'flex items-center space-x-1.5 px-3 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition';
+      } else {
+        btnXampp.className = 'flex items-center space-x-1.5 px-3 py-1 rounded-lg text-xs font-bold transition bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20';
+        btnSupabase.className = 'flex items-center space-x-1.5 px-3 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition';
+      }
+    }
+
     if (isLive) {
-      if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
-      if (text) text.innerText = 'Supabase Connected';
-      if (modalStatus) {
-        modalStatus.innerText = '🟢 Connected to Cloud Supabase Database (Live Tables Active)';
-        modalStatus.className = 'font-mono text-emerald-400 font-bold';
+      if (mode === 'supabase') {
+        if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+        if (text) text.innerText = 'Supabase Cloud';
+        if (modalStatus) {
+          modalStatus.innerText = '🟢 Connected to Cloud Supabase Database (Live Tables Active)';
+          modalStatus.className = 'font-mono text-emerald-400 font-bold';
+        }
+      } else {
+        if (dot) dot.className = 'w-2 h-2 rounded-full bg-cyan-400';
+        if (text) text.innerText = 'XAMPP MySQL';
+        if (modalStatus) {
+          modalStatus.innerText = '🔵 Connected to Local XAMPP MySQL Database (`pos_gunshop`)';
+          modalStatus.className = 'font-mono text-cyan-400 font-bold';
+        }
       }
     } else {
-      if (dot) dot.className = 'w-2 h-2 rounded-full bg-amber-400';
-      if (text) text.innerText = 'Local (Offline Sync)';
+      if (dot) dot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
+      if (text) text.innerText = mode === 'supabase' ? 'Supabase Offline' : 'XAMPP Offline';
       if (modalStatus) {
-        modalStatus.innerText = '🟡 Local Storage Active. Check Supabase connection.';
+        modalStatus.innerText = mode === 'supabase' 
+          ? '🟡 Supabase Unreachable. Running on local fallback cache.' 
+          : '🟡 XAMPP MySQL Offline. Please ensure Apache & MySQL are started in XAMPP.';
         modalStatus.className = 'font-mono text-amber-400 font-bold';
       }
     }
@@ -2196,9 +2437,13 @@ const DB = {
     logs.unshift(entry);
     this.setAll('logs', logs);
 
-    if (this.isSupabaseLive) {
+    if (this.isLive) {
       try {
-        await API.insert('system_logs', entry);
+        if (this.mode === 'supabase') {
+          await SupabaseAPI.insert('system_logs', entry);
+        } else {
+          await XamppAPI.post('system_logs', entry);
+        }
       } catch(e) {}
     }
   }
@@ -2221,10 +2466,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   loadSavedSettings();
   initKeybindings();
 
-  // Load latest data from Supabase Cloud immediately
-  await DB.syncFromSupabase();
+  // Load latest data from active database
+  await DB.syncActiveDatabase();
 
-  // Check if session exists
   const savedUser = sessionStorage.getItem('armortech_user');
   if (savedUser) {
     try {
@@ -2249,7 +2493,92 @@ function loadSavedSettings() {
   }
 }
 
-// --- 7. AUTHENTICATION & ROLE-BASED ROUTING ---
+// --- 7. DATABASE SWITCHER CONTROLLER ---
+async function setDatabaseMode(mode) {
+  if (DB.mode === mode) return;
+
+  DB.mode = mode;
+  localStorage.setItem('armortech_db_mode', mode);
+  
+  showToast(`Switching database engine to: ${mode === 'supabase' ? 'Supabase Cloud (PostgreSQL)' : 'XAMPP Local (MySQL)'}...`, 'info');
+
+  const ok = await DB.syncActiveDatabase();
+  playSuccessChime();
+
+  if (ok) {
+    showToast(`Active Database: ${mode === 'supabase' ? 'Supabase Cloud' : 'XAMPP Local MySQL'} synchronized!`, 'success');
+  } else {
+    showToast(`Warning: Could not connect to ${mode}. Check connection or service status.`, 'warning');
+  }
+
+  // Refresh current active view
+  if (STATE.activeView === 'dashboard') renderDashboard();
+  if (STATE.activeView === 'pos') renderPosCatalog();
+  if (STATE.activeView === 'inventory') renderInventoryTable();
+  if (STATE.activeView === 'suppliers') renderSuppliersView();
+  if (STATE.activeView === 'payroll') renderPayrollTable();
+  if (STATE.activeView === 'reports') renderReportsView();
+  if (STATE.activeView === 'logs') renderSystemLogs();
+  if (STATE.activeView === 'accounts') renderAccountsTable();
+}
+
+// Clone data between Supabase and XAMPP MySQL
+async function cloneDataBetweenDatabases(direction) {
+  showToast(`Cloning database (${direction === 'to_xampp' ? 'Supabase ➔ XAMPP' : 'XAMPP ➔ Supabase'})...`, 'info');
+
+  try {
+    let sourceProducts, sourceAccounts, sourceSuppliers, sourcePayroll, sourceSales, sourceSettings;
+
+    if (direction === 'to_xampp') {
+      // Pull from Supabase
+      sourceProducts = await SupabaseAPI.get('products', 'select=*');
+      sourceAccounts = await SupabaseAPI.get('accounts', 'select=*');
+      sourceSuppliers = await SupabaseAPI.get('suppliers', 'select=*');
+      sourcePayroll = await SupabaseAPI.get('payroll', 'select=*');
+      sourceSales = await SupabaseAPI.get('sales', 'select=*');
+      sourceSettings = await SupabaseAPI.get('settings', 'select=*&limit=1');
+
+      // Write to XAMPP
+      if (sourceAccounts.length) await XamppAPI.post('accounts', sourceAccounts);
+      if (sourceSuppliers.length) await XamppAPI.post('suppliers', sourceSuppliers);
+      if (sourceProducts.length) await XamppAPI.post('products', sourceProducts);
+      if (sourcePayroll.length) await XamppAPI.post('payroll', sourcePayroll);
+      if (sourceSales.length) await XamppAPI.post('sales', sourceSales);
+      if (sourceSettings.length) await XamppAPI.post('settings', sourceSettings);
+
+      showToast('Successfully cloned all Supabase records into XAMPP MySQL database!', 'success');
+    } else {
+      // Pull from XAMPP
+      sourceProducts = await XamppAPI.get('products');
+      sourceAccounts = await XamppAPI.get('accounts');
+      sourceSuppliers = await XamppAPI.get('suppliers');
+      sourcePayroll = await XamppAPI.get('payroll');
+      sourceSales = await XamppAPI.get('sales');
+      sourceSettings = await XamppAPI.get('settings');
+
+      // Write to Supabase
+      if (sourceAccounts.length) await SupabaseAPI.upsert('accounts', sourceAccounts);
+      if (sourceSuppliers.length) await SupabaseAPI.upsert('suppliers', sourceSuppliers);
+      if (sourceProducts.length) await SupabaseAPI.upsert('products', sourceProducts);
+      if (sourcePayroll.length) await SupabaseAPI.upsert('payroll', sourcePayroll);
+      if (sourceSales.length) {
+        const cleanSales = sourceSales.map(({ items, ...s }) => s);
+        await SupabaseAPI.upsert('sales', cleanSales);
+      }
+      if (sourceSettings.length) await SupabaseAPI.upsert('settings', sourceSettings);
+
+      showToast('Successfully cloned all XAMPP MySQL records into Supabase Cloud!', 'success');
+    }
+
+    await DB.syncActiveDatabase();
+    playSuccessChime();
+  } catch(err) {
+    console.error('Clone error:', err);
+    showToast(`Error cloning data: ${err.message}`, 'error');
+  }
+}
+
+// --- 8. AUTHENTICATION & ROLE-BASED ROUTING ---
 function showLoginScreen() {
   document.getElementById('loginScreen').classList.remove('hidden');
   document.getElementById('userProfileHeader').classList.add('hidden');
@@ -2290,7 +2619,7 @@ function authenticateUser(user) {
   document.getElementById('loginScreen').classList.add('hidden');
   document.getElementById('loginError').classList.add('hidden');
   
-  DB.logEvent('LOGIN', `User ${user.fullname} (${user.role.toUpperCase()}) authenticated successfully.`);
+  DB.logEvent('LOGIN', `User ${user.fullname} (${user.role.toUpperCase()}) authenticated successfully via ${DB.mode.toUpperCase()}.`);
   showToast(`Welcome back, ${user.fullname}!`, 'success');
   playSuccessChime();
 
@@ -2374,7 +2703,7 @@ function togglePasswordVisibility(inputId, btn) {
   }
 }
 
-// --- 8. NAVIGATION & VIEW SWITCHING ---
+// --- 9. NAVIGATION & VIEW SWITCHING ---
 function switchView(viewName) {
   STATE.activeView = viewName;
   document.querySelectorAll('.content-view').forEach(v => v.classList.add('hidden'));
@@ -2398,7 +2727,7 @@ function switchView(viewName) {
   if (viewName === 'settings') renderSettingsForm();
 }
 
-// --- 9. POS CASHIERING & BARCODE ENGINE ---
+// --- 10. POS CASHIERING & BARCODE ENGINE ---
 let posCategoryFilter = 'All';
 
 function renderPosCatalog() {
@@ -2494,19 +2823,21 @@ function handleBarcodeSubmit() {
 }
 
 function addItemToCart(product) {
+  const price = Number(product.selling_price) || 0;
+  const stock = Number(product.stock_qty) || 0;
   const existing = STATE.cart.find(c => c.product.id === product.id);
   if (existing) {
-    if (existing.qty + 1 > product.stock_qty) {
-      showToast(`Cannot add more. Only ${product.stock_qty} in stock.`, 'warning');
+    if (existing.qty + 1 > stock) {
+      showToast(`Cannot add more. Only ${stock} in stock.`, 'warning');
       return;
     }
     existing.qty += 1;
-    existing.total = existing.qty * existing.product.selling_price;
+    existing.total = Math.round((existing.qty * price) * 100) / 100;
   } else {
     STATE.cart.push({
-      product: product,
+      product: { ...product, selling_price: price, stock_qty: stock },
       qty: 1,
-      total: product.selling_price
+      total: price
     });
   }
 
@@ -2616,17 +2947,18 @@ function renderPosCart() {
   updatePosTotals(subtotal);
 }
 
-function updatePosTotals(subtotal) {
-  const taxRate = STATE.currentTaxRate;
-  const taxAmount = (subtotal * taxRate) / 100;
+function updatePosTotals(rawSubtotal) {
+  const subtotal = Math.round((Number(rawSubtotal) || 0) * 100) / 100;
+  const taxRate = Number(STATE.currentTaxRate) || 0;
+  const taxAmount = Math.round(((subtotal * taxRate) / 100) * 100) / 100;
 
   let discountAmount = 0;
-  if (STATE.currentDiscount.rate > 0) {
-    discountAmount = (subtotal * STATE.currentDiscount.rate) / 100;
+  if (Number(STATE.currentDiscount.rate) > 0) {
+    discountAmount = Math.round(((subtotal * Number(STATE.currentDiscount.rate)) / 100) * 100) / 100;
   }
   STATE.currentDiscount.amount = discountAmount;
 
-  const grandTotal = Math.max(0, subtotal + taxAmount - discountAmount);
+  const grandTotal = Math.round(Math.max(0, subtotal + taxAmount - discountAmount) * 100) / 100;
 
   document.getElementById('posSubtotal').innerText = `₱${subtotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
   document.getElementById('posTaxAmount').innerText = `₱${taxAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
@@ -2645,7 +2977,7 @@ function updateTaxRateSetting(val) {
   showToast(`Tax rate set to ${val}%`, 'info');
 }
 
-// --- 10. DISCOUNTS (PWD & SENIOR CITIZEN) ---
+// --- 11. DISCOUNTS (PWD & SENIOR CITIZEN) ---
 let pendingDiscountType = 'None';
 
 function openDiscountModal() {
@@ -2708,7 +3040,7 @@ function applyDiscountConfirm() {
   showToast(rate > 0 ? `${pendingDiscountType} 20% discount applied.` : 'Discount removed.', 'success');
 }
 
-// --- 11. CHECKOUT & TENDER MODAL (F4) ---
+// --- 12. CHECKOUT & TENDER MODAL ---
 function openCheckoutModal() {
   if (STATE.cart.length === 0) {
     showToast('Cart is empty. Add items first.', 'warning');
@@ -2796,7 +3128,8 @@ function renderCashlessQR(provider) {
 
 function calculateChangeDue() {
   const tender = parseFloat(document.getElementById('tenderAmountInput').value) || 0;
-  const change = Math.max(0, tender - STATE.currentGrandTotal);
+  const grandTotal = Math.round(Number(STATE.currentGrandTotal) * 100) / 100;
+  const change = Math.max(0, Math.round((tender - grandTotal) * 100) / 100);
   document.getElementById('tenderChangeDue').innerText = `₱${change.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
 }
 
@@ -2806,25 +3139,27 @@ function quickFillTender(amount) {
 }
 
 function quickFillExactTender() {
-  document.getElementById('tenderAmountInput').value = STATE.currentGrandTotal.toFixed(2);
+  const grandTotal = Math.round(Number(STATE.currentGrandTotal) * 100) / 100;
+  document.getElementById('tenderAmountInput').value = grandTotal.toFixed(2);
   calculateChangeDue();
 }
 
-// --- 12. SALE FINALIZATION & REAL-TIME SUPABASE TRANSACTION ---
+// --- 13. SALE FINALIZATION: WRITES TO ACTIVE DATABASE (SUPABASE OR XAMPP) ---
 async function processSaleFinalization() {
   const method = STATE.selectedPaymentMethod;
-  let tenderAmount = STATE.currentGrandTotal;
+  const currentTotal = Math.round(Number(STATE.currentGrandTotal) * 100) / 100;
+  let tenderAmount = currentTotal;
   let changeDue = 0;
   let paymentRef = '';
 
   if (method === 'Cash') {
     tenderAmount = parseFloat(document.getElementById('tenderAmountInput').value) || 0;
-    if (tenderAmount < STATE.currentGrandTotal) {
-      showToast(`Tendered amount (₱${tenderAmount}) is less than total payable (₱${STATE.currentGrandTotal})!`, 'error');
+    if (tenderAmount < (currentTotal - 0.009)) {
+      showToast(`Tendered amount (₱${tenderAmount.toFixed(2)}) is less than total payable (₱${currentTotal.toFixed(2)})!`, 'error');
       document.getElementById('tenderAmountInput').focus();
       return;
     }
-    changeDue = tenderAmount - STATE.currentGrandTotal;
+    changeDue = Math.max(0, Math.round((tenderAmount - currentTotal) * 100) / 100);
   } else {
     paymentRef = document.getElementById('cashlessRefInput').value.trim();
     if (!paymentRef) {
@@ -2856,7 +3191,7 @@ async function processSaleFinalization() {
   const sale = {
     id: saleId,
     invoice_no: invoiceNo,
-    created_at: now.toISOString(),
+    created_at: now.toISOString().slice(0, 19).replace('T', ' '),
     cashier_id: STATE.currentUser ? STATE.currentUser.id : 'acc_03',
     cashier_name: STATE.currentUser ? STATE.currentUser.fullname : 'Cashier',
     subtotal: STATE.currentSubtotal,
@@ -2891,35 +3226,39 @@ async function processSaleFinalization() {
   DB.setAll('sales', sales);
 
   // 3. Log Event
-  DB.logEvent('SALE_COMPLETED', `Invoice #${invoiceNo} closed by ${sale.cashier_name}. Total: ₱${sale.grand_total.toFixed(2)} (${method}).`);
+  DB.logEvent('SALE_COMPLETED', `Invoice #${invoiceNo} closed by ${sale.cashier_name}. Total: ₱${sale.grand_total.toFixed(2)} (${method}) via ${DB.mode.toUpperCase()}.`);
 
-  // 4. REAL-TIME WRITE TO SUPABASE CLOUD (Checklist Item #1 & #8)
+  // 4. WRITE TO ACTIVE DATABASE (SUPABASE OR XAMPP MYSQL)
   try {
-    const { items, ...saleRecord } = sale;
-    await API.insert('sales', saleRecord);
-    await API.insert('sale_items', saleItemRows);
-
-    // Update stock in Supabase products table
-    for (const item of saleItemRows) {
-      const prod = products.find(p => p.id === item.product_id);
-      if (prod) {
-        await API.update('products', 'id', prod.id, { stock_qty: prod.stock_qty });
+    if (DB.mode === 'xampp') {
+      const { items, ...saleHeader } = sale;
+      await XamppAPI.sale(saleHeader, saleItemRows);
+      console.log(`Sale ${invoiceNo} committed to XAMPP MySQL.`);
+    } else {
+      const { items, ...saleHeader } = sale;
+      await SupabaseAPI.insert('sales', saleHeader);
+      await SupabaseAPI.insert('sale_items', saleItemRows);
+      for (const item of saleItemRows) {
+        const prod = products.find(p => p.id === item.product_id);
+        if (prod) {
+          await SupabaseAPI.update('products', 'id', prod.id, { stock_qty: prod.stock_qty });
+        }
       }
+      console.log(`Sale ${invoiceNo} committed to Supabase Cloud.`);
     }
-    console.log(`Sale ${invoiceNo} successfully committed to Supabase Cloud.`);
   } catch(err) {
-    console.warn('Supabase real-time write error (saved locally):', err.message);
+    console.warn(`Write to ${DB.mode} failed, saved locally:`, err.message);
   }
 
   STATE.lastCompletedSale = sale;
   closeCheckoutModal();
   playSuccessChime();
-  showToast(`Transaction complete! Invoice #${invoiceNo} saved to Supabase`, 'success');
+  showToast(`Transaction complete! Invoice #${invoiceNo} saved to ${DB.mode === 'supabase' ? 'Supabase' : 'XAMPP MySQL'}`, 'success');
 
   openReceiptModal(sale);
 }
 
-// --- 13. SOFT-COPY RECEIPT PREVIEW ---
+// --- 14. SOFT-COPY RECEIPT PREVIEW ---
 function openReceiptModal(sale) {
   if (!sale) sale = STATE.lastCompletedSale;
   if (!sale) return;
@@ -2986,6 +3325,7 @@ function downloadReceiptTxt() {
   txt += `     GUN SHOP & TACTICAL ARMS           \n`;
   txt += `Owners: Maria Labay, Denz Sacay, Jameson Parmis\n`;
   txt += `101 Ballistics Way, Camp Gen Defense    \n`;
+  txt += `Database: ${DB.mode.toUpperCase()}     \n`;
   txt += `========================================\n`;
   txt += `INVOICE: ${sale.invoice_no}\n`;
   txt += `DATE:    ${new Date(sale.created_at).toLocaleString()}\n`;
@@ -3015,7 +3355,7 @@ function downloadReceiptTxt() {
   a.click();
 }
 
-// --- 14. INVENTORY MANAGEMENT & REAL-TIME RESTOCK ---
+// --- 15. INVENTORY MANAGEMENT & REAL-TIME RESTOCK ---
 function renderInventoryTable() {
   filterInventoryTable();
 }
@@ -3165,29 +3505,34 @@ async function handleRestockSubmit(event) {
     unit_cost: unitCost,
     total_cost: qty * unitCost,
     restocked_by: STATE.currentUser ? STATE.currentUser.fullname : 'Staff',
-    date: new Date().toISOString(),
+    date: new Date().toISOString().slice(0, 19).replace('T', ' '),
     notes: notes || null
   };
 
-  // REAL-TIME WRITE TO SUPABASE (restock_logs & products)
+  // WRITE TO ACTIVE DATABASE
   try {
-    await API.insert('restock_logs', restockEntry);
-    await API.update('products', 'id', prod.id, {
-      stock_qty: prod.stock_qty,
-      cost_price: prod.cost_price,
-      supplier_id: prod.supplier_id,
-      supplier_name: prod.supplier_name
-    });
-    console.log(`Restock of ${prod.name} successfully written to Supabase.`);
+    if (DB.mode === 'xampp') {
+      await XamppAPI.restock(restockEntry);
+      console.log(`Restock of ${prod.name} saved to XAMPP MySQL.`);
+    } else {
+      await SupabaseAPI.insert('restock_logs', restockEntry);
+      await SupabaseAPI.update('products', 'id', prod.id, {
+        stock_qty: prod.stock_qty,
+        cost_price: prod.cost_price,
+        supplier_id: prod.supplier_id,
+        supplier_name: prod.supplier_name
+      });
+      console.log(`Restock of ${prod.name} saved to Supabase.`);
+    }
   } catch(e) {
-    console.warn('Supabase restock log write error:', e.message);
+    console.warn(`Restock write error for ${DB.mode}:`, e.message);
   }
 
   DB.logEvent('RESTOCK', `Added +${qty} units to "${prod.name}" from ${sup ? sup.name : 'Supplier'}. Cost: ₱${(qty * unitCost).toFixed(2)}.`);
 
   closeRestockModal();
   renderInventoryTable();
-  showToast(`Restocked +${qty} units of ${prod.name}! Saved to Supabase.`, 'success');
+  showToast(`Restocked +${qty} units of ${prod.name}! Saved to ${DB.mode.toUpperCase()}.`, 'success');
 }
 
 function openRestockBatchModal() {
@@ -3311,17 +3656,20 @@ async function handleProductSubmit(event) {
 
   DB.setAll('products', products);
 
-  // REAL-TIME UPSERT TO SUPABASE
+  // WRITE TO ACTIVE DATABASE
   try {
-    await API.upsert('products', targetProduct);
-    console.log(`Product ${targetProduct.name} saved to Supabase.`);
+    if (DB.mode === 'xampp') {
+      await XamppAPI.post('products', targetProduct);
+    } else {
+      await SupabaseAPI.upsert('products', targetProduct);
+    }
   } catch(e) {
-    console.warn('Supabase product upsert error:', e.message);
+    console.warn(`Product write to ${DB.mode} error:`, e.message);
   }
 
   closeProductModal();
   renderInventoryTable();
-  showToast(editId ? 'Product updated and synced to Supabase.' : 'New product added to Supabase.', 'success');
+  showToast(editId ? `Product updated in ${DB.mode.toUpperCase()}.` : `New product added to ${DB.mode.toUpperCase()}.`, 'success');
 }
 
 async function deleteProduct(prodId) {
@@ -3333,7 +3681,11 @@ async function deleteProduct(prodId) {
     DB.setAll('products', products);
 
     try {
-      await API.update('products', 'id', prodId, { status: 'archived' });
+      if (DB.mode === 'xampp') {
+        await XamppAPI.patch('products', 'id', prodId, { status: 'archived' });
+      } else {
+        await SupabaseAPI.update('products', 'id', prodId, { status: 'archived' });
+      }
     } catch(e) {}
 
     DB.logEvent('PRODUCT_ARCHIVED', `Product "${p.name}" (${p.barcode}) was archived.`);
@@ -3342,7 +3694,7 @@ async function deleteProduct(prodId) {
   }
 }
 
-// --- 15. SUPPLIER MANAGEMENT ---
+// --- 16. SUPPLIER MANAGEMENT ---
 function renderSuppliersView() {
   const grid = document.getElementById('suppliersGrid');
   if (!grid) return;
@@ -3464,14 +3816,17 @@ async function handleSupplierSubmit(event) {
 
   DB.setAll('suppliers', suppliers);
 
-  // REAL-TIME WRITE TO SUPABASE
   try {
-    await API.upsert('suppliers', targetSup);
+    if (DB.mode === 'xampp') {
+      await XamppAPI.post('suppliers', targetSup);
+    } else {
+      await SupabaseAPI.upsert('suppliers', targetSup);
+    }
   } catch(e) {}
 
   closeSupplierModal();
   renderSuppliersView();
-  showToast('Supplier saved and synced with Supabase.', 'success');
+  showToast(`Supplier saved to ${DB.mode.toUpperCase()}.`, 'success');
 }
 
 async function deactivateSupplier(supId) {
@@ -3483,7 +3838,11 @@ async function deactivateSupplier(supId) {
     DB.setAll('suppliers', suppliers);
 
     try {
-      await API.update('suppliers', 'id', supId, { status: 'inactive' });
+      if (DB.mode === 'xampp') {
+        await XamppAPI.patch('suppliers', 'id', supId, { status: 'inactive' });
+      } else {
+        await SupabaseAPI.update('suppliers', 'id', supId, { status: 'inactive' });
+      }
     } catch(e) {}
 
     DB.logEvent('SUPPLIER_DEACTIVATED', `Supplier "${s.name}" was deactivated.`);
@@ -3492,7 +3851,7 @@ async function deactivateSupplier(supId) {
   }
 }
 
-// --- 16. HR & PAYROLL MODULE ---
+// --- 17. HR & PAYROLL MODULE ---
 function renderPayrollTable() {
   const tbody = document.getElementById('payrollTableBody');
   if (!tbody) return;
@@ -3614,15 +3973,18 @@ async function handlePayrollSubmit(event) {
   payrolls.unshift(newRecord);
   DB.setAll('payroll', payrolls);
 
-  // REAL-TIME WRITE TO SUPABASE
   try {
-    await API.insert('payroll', newRecord);
+    if (DB.mode === 'xampp') {
+      await XamppAPI.post('payroll', newRecord);
+    } else {
+      await SupabaseAPI.insert('payroll', newRecord);
+    }
   } catch(e) {}
 
   DB.logEvent('PAYROLL_PROCESSED', `Salary processed for ${emp} (${pStart} to ${pEnd}). Net: ₱${net.toFixed(2)}.`);
   closePayrollModal();
   renderPayrollTable();
-  showToast(`Payroll voucher created for ${emp}! Saved to Supabase.`, 'success');
+  showToast(`Payroll voucher created for ${emp}! Saved to ${DB.mode.toUpperCase()}.`, 'success');
 }
 
 function printSinglePayslip(payId) {
@@ -3634,6 +3996,7 @@ function printSinglePayslip(payId) {
               ARMORTECH DEFENSE POS
              OFFICIAL PAYSLIP VOUCHER
     Owners: Maria Labay, Denz Sacay, Jameson Parmis
+    Database: ${DB.mode.toUpperCase()}
     ==================================================
     EMPLOYEE:    ${p.employee_name}
     POSITION:    ${p.employee_role}
@@ -3665,7 +4028,7 @@ function printPayrollSummary() {
   window.print();
 }
 
-// --- 17. REPORTS & INCOME STATEMENT ENGINE ---
+// --- 18. REPORTS & INCOME STATEMENT ENGINE ---
 let activeReportTab = 'income';
 
 function switchReportTab(tab) {
@@ -3809,11 +4172,11 @@ function exportActiveReportCSV() {
   const blob = new Blob([csv], { type: 'text/csv' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `Armortech_Sales_Report_${new Date().toISOString().slice(0,10)}.csv`;
+  a.download = `Armortech_${DB.mode.toUpperCase()}_Sales_Report_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();
 }
 
-// --- 18. SYSTEM AUDIT LOGS (ADMIN ONLY) ---
+// --- 19. SYSTEM AUDIT LOGS ---
 function renderSystemLogs() {
   const tbody = document.getElementById('systemLogsTableBody');
   if (!tbody) return;
@@ -3857,14 +4220,14 @@ function clearSystemLogs() {
     username: STATE.currentUser ? STATE.currentUser.username : 'admin',
     role: 'admin',
     action: 'LOGS_CLEARED',
-    details: 'System audit logs were cleared by administrator.'
+    details: `System audit logs were cleared by administrator in ${DB.mode.toUpperCase()} mode.`
   }];
   DB.setAll('logs', resetLog);
   renderSystemLogs();
   showToast('Logs cleared.', 'info');
 }
 
-// --- 19. ACCOUNTS & ROLE MANAGEMENT (ADMIN ONLY) ---
+// --- 20. ACCOUNTS & ROLE MANAGEMENT ---
 function renderAccountsTable() {
   const tbody = document.getElementById('accountsTableBody');
   if (!tbody) return;
@@ -3954,7 +4317,7 @@ async function handleAccountSubmit(event) {
       targetAcc.password = password;
       targetAcc.role = role;
     }
-    DB.logEvent('ACCOUNT_UPDATED', `Account ${username} (${role.toUpperCase()}) updated.`);
+    DB.logEvent('ACCOUNT_UPDATED', `Account ${username} (${role.toUpperCase()}) updated in ${DB.mode.toUpperCase()}.`);
   } else {
     if (accounts.some(x => x.username === username)) {
       showToast(`Username "${username}" is already in use!`, 'error');
@@ -3974,14 +4337,17 @@ async function handleAccountSubmit(event) {
 
   DB.setAll('accounts', accounts);
 
-  // REAL-TIME WRITE TO SUPABASE
   try {
-    await API.upsert('accounts', targetAcc);
+    if (DB.mode === 'xampp') {
+      await XamppAPI.post('accounts', targetAcc);
+    } else {
+      await SupabaseAPI.upsert('accounts', targetAcc);
+    }
   } catch(e) {}
 
   closeAccountModal();
   renderAccountsTable();
-  showToast('Account saved and synced with Supabase.', 'success');
+  showToast(`Account saved to ${DB.mode.toUpperCase()}.`, 'success');
 }
 
 async function toggleAccountStatus(accId) {
@@ -3993,7 +4359,11 @@ async function toggleAccountStatus(accId) {
   DB.setAll('accounts', accounts);
 
   try {
-    await API.update('accounts', 'id', accId, { status: a.status });
+    if (DB.mode === 'xampp') {
+      await XamppAPI.patch('accounts', 'id', accId, { status: a.status });
+    } else {
+      await SupabaseAPI.update('accounts', 'id', accId, { status: a.status });
+    }
   } catch(e) {}
 
   DB.logEvent('ACCOUNT_STATUS', `Account ${a.username} set to ${a.status}.`);
@@ -4001,7 +4371,7 @@ async function toggleAccountStatus(accId) {
   renderAccountsTable();
 }
 
-// --- 20. SETTINGS & TAX CONFIGURATION FORM ---
+// --- 21. SETTINGS FORM ---
 function renderSettingsForm() {
   const s = DB.getAll('settings') || DEFAULT_SETTINGS;
   document.getElementById('setStoreName').value = s.store_name || DEFAULT_SETTINGS.store_name;
@@ -4034,14 +4404,18 @@ async function saveSystemSettings(event) {
   if (posSelect) posSelect.value = String(settings.tax_rate);
 
   try {
-    await API.upsert('settings', settings);
+    if (DB.mode === 'xampp') {
+      await XamppAPI.post('settings', settings);
+    } else {
+      await SupabaseAPI.upsert('settings', settings);
+    }
   } catch(e) {}
 
-  DB.logEvent('SETTINGS_UPDATED', `Store settings and tax rate (${settings.tax_rate}%) updated.`);
-  showToast('Settings saved to Supabase.', 'success');
+  DB.logEvent('SETTINGS_UPDATED', `Store settings and tax rate (${settings.tax_rate}%) updated in ${DB.mode.toUpperCase()}.`);
+  showToast(`Settings saved to ${DB.mode.toUpperCase()}.`, 'success');
 }
 
-// --- 21. DASHBOARD TELEMETRY & CHARTS ---
+// --- 22. DASHBOARD TELEMETRY & CHARTS ---
 let salesChartInstance = null;
 let categoryChartInstance = null;
 
@@ -4197,7 +4571,7 @@ function drawDashboardCharts() {
   }
 }
 
-// --- 22. MOUSELESS OPERATION KEYBOARD HANDLER ---
+// --- 23. MOUSELESS KEYBOARD SHORTCUTS ---
 function initKeybindings() {
   document.addEventListener('keydown', (e) => {
     if (e.key === 'F12') {
@@ -4268,34 +4642,35 @@ function closeShortcutsModal() {
   document.getElementById('shortcutsModal').classList.add('hidden');
 }
 
-// --- 23. SUPABASE CLOUD SYNC & SCHEMA RUNNER ---
-async function testSupabaseConnection(silent = false) {
-  const success = await DB.syncFromSupabase();
-  if (success) {
-    if (!silent) showToast('Connected to Supabase! All live tables synchronized.', 'success');
-  } else {
-    if (!silent) showToast('Could not reach Supabase tables. Using local storage.', 'warning');
-  }
-  return success;
-}
+// --- 24. MODAL & DATABASE SQL CODE VIEWERS ---
+let activeSqlModalTab = 'supabase';
 
-async function syncLocalToSupabase() {
-  showToast('Synchronizing with Supabase Cloud...', 'info');
-  const ok = await DB.syncFromSupabase();
-  if (ok) {
-    showToast('Supabase cloud synchronization successful!', 'success');
-    if (STATE.activeView === 'dashboard') renderDashboard();
-    if (STATE.activeView === 'inventory') renderInventoryTable();
-    if (STATE.activeView === 'pos') renderPosCatalog();
-    if (STATE.activeView === 'reports') renderReportsView();
-  } else {
-    showToast('Sync failed. Please check your internet or Supabase status.', 'error');
+function switchSqlModalTab(tab) {
+  activeSqlModalTab = tab;
+  document.querySelectorAll('.sql-tab-btn').forEach(b => {
+    b.classList.remove('bg-amber-500', 'bg-cyan-500', 'text-slate-950', 'font-bold');
+    b.classList.add('bg-slate-800', 'text-slate-300');
+  });
+
+  const activeBtn = document.getElementById(`sqlTabBtn-${tab}`);
+  if (activeBtn) {
+    activeBtn.classList.remove('bg-slate-800', 'text-slate-300');
+    activeBtn.classList.add(tab === 'supabase' ? 'bg-amber-500' : tab === 'xampp' ? 'bg-cyan-500' : 'bg-emerald-500', 'text-slate-950', 'font-bold');
   }
+
+  ['supabase', 'xampp', 'sync'].forEach(t => {
+    const pane = document.getElementById(`sqlTabPane-${t}`);
+    if (pane) pane.classList.add('hidden');
+  });
+
+  const activePane = document.getElementById(`sqlTabPane-${tab}`);
+  if (activePane) activePane.classList.remove('hidden');
 }
 
 function openSqlSetupModal() {
-  testSupabaseConnection(true);
   document.getElementById('sqlSetupModal').classList.remove('hidden');
+  switchSqlModalTab(DB.mode === 'xampp' ? 'xampp' : 'supabase');
+  loadSqlModalContent();
 }
 
 function closeSqlSetupModal() {
@@ -4303,10 +4678,10 @@ function closeSqlSetupModal() {
 }
 
 function loadSqlModalContent() {
-  const sql = `-- ====================================================================
--- ARMORTECH DEFENSE POS (GUN SHOP) - SUPABASE SCHEMA
+  const supabaseSql = `-- ====================================================================
+-- ARMORTECH DEFENSE POS (GUN SHOP) - SUPABASE CLOUD (PostgreSQL)
 -- Owners: Maria Labay, Denz Sacay, Jameson Parmis
--- Run this in: Supabase -> Project -> SQL Editor -> Run
+-- Run in: Supabase -> Project -> SQL Editor -> Run
 -- ====================================================================
 
 CREATE TABLE IF NOT EXISTS accounts (
@@ -4436,7 +4811,6 @@ CREATE TABLE IF NOT EXISTS settings (
     maribank_number TEXT DEFAULT '0919-777-GUNS'
 );
 
--- DISABLE RLS TO PERMIT PUBLIC ANON REST ACCESS
 ALTER TABLE accounts DISABLE ROW LEVEL SECURITY;
 ALTER TABLE suppliers DISABLE ROW LEVEL SECURITY;
 ALTER TABLE products DISABLE ROW LEVEL SECURITY;
@@ -4448,22 +4822,158 @@ ALTER TABLE system_logs DISABLE ROW LEVEL SECURITY;
 ALTER TABLE settings DISABLE ROW LEVEL SECURITY;
 `;
 
-  const txt = document.getElementById('sqlCodeSnippet');
-  if (txt) txt.value = sql;
+  const xamppSql = `-- ====================================================================
+-- ARMORTECH DEFENSE POS (GUN SHOP) - XAMPP MySQL / MariaDB Schema
+-- Database Name: pos_gunshop
+-- Import via: phpMyAdmin (http://localhost/phpmyadmin) -> Import
+-- ====================================================================
+
+CREATE DATABASE IF NOT EXISTS \`pos_gunshop\` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE \`pos_gunshop\`;
+
+CREATE TABLE IF NOT EXISTS \`accounts\` (
+  \`id\` VARCHAR(64) NOT NULL PRIMARY KEY,
+  \`username\` VARCHAR(64) NOT NULL UNIQUE,
+  \`password\` VARCHAR(255) NOT NULL,
+  \`fullname\` VARCHAR(128) NOT NULL,
+  \`role\` ENUM('admin', 'manager', 'cashier') NOT NULL DEFAULT 'cashier',
+  \`status\` ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
+  \`created_at\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS \`suppliers\` (
+  \`id\` VARCHAR(64) NOT NULL PRIMARY KEY,
+  \`name\` VARCHAR(128) NOT NULL,
+  \`contact_person\` VARCHAR(128) NULL,
+  \`phone\` VARCHAR(64) NULL,
+  \`email\` VARCHAR(128) NULL,
+  \`address\` TEXT NULL,
+  \`status\` ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
+  \`created_at\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS \`products\` (
+  \`id\` VARCHAR(64) NOT NULL PRIMARY KEY,
+  \`barcode\` VARCHAR(64) NOT NULL UNIQUE,
+  \`name\` VARCHAR(191) NOT NULL,
+  \`category\` VARCHAR(64) NOT NULL,
+  \`specs\` TEXT NULL,
+  \`cost_price\` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+  \`selling_price\` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+  \`stock_qty\` INT NOT NULL DEFAULT 0,
+  \`low_stock_threshold\` INT NOT NULL DEFAULT 5,
+  \`supplier_id\` VARCHAR(64) NULL,
+  \`supplier_name\` VARCHAR(128) NULL,
+  \`expiry_date\` DATE NULL,
+  \`status\` ENUM('active', 'archived') NOT NULL DEFAULT 'active',
+  \`created_at\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS \`restock_logs\` (
+  \`id\` VARCHAR(64) NOT NULL PRIMARY KEY,
+  \`product_id\` VARCHAR(64) NOT NULL,
+  \`product_name\` VARCHAR(191) NOT NULL,
+  \`supplier_id\` VARCHAR(64) NULL,
+  \`supplier_name\` VARCHAR(128) NULL,
+  \`quantity\` INT NOT NULL,
+  \`unit_cost\` DECIMAL(12, 2) NOT NULL,
+  \`total_cost\` DECIMAL(12, 2) NOT NULL,
+  \`restocked_by\` VARCHAR(128) NOT NULL,
+  \`date\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  \`notes\` TEXT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS \`sales\` (
+  \`id\` VARCHAR(64) NOT NULL PRIMARY KEY,
+  \`invoice_no\` VARCHAR(64) NOT NULL UNIQUE,
+  \`cashier_id\` VARCHAR(64) NULL,
+  \`cashier_name\` VARCHAR(128) NOT NULL,
+  \`subtotal\` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+  \`tax_rate\` DECIMAL(5, 2) NOT NULL DEFAULT 12.00,
+  \`tax_amount\` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+  \`discount_type\` VARCHAR(64) NOT NULL DEFAULT 'None',
+  \`discount_id\` VARCHAR(128) NULL,
+  \`discount_rate\` DECIMAL(5, 2) NOT NULL DEFAULT 0.00,
+  \`discount_amount\` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+  \`grand_total\` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+  \`payment_method\` VARCHAR(32) NOT NULL DEFAULT 'Cash',
+  \`payment_ref\` VARCHAR(128) NULL,
+  \`amount_tendered\` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+  \`change_due\` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+  \`status\` ENUM('completed', 'voided') NOT NULL DEFAULT 'completed',
+  \`created_at\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS \`sale_items\` (
+  \`id\` VARCHAR(64) NOT NULL PRIMARY KEY,
+  \`sale_id\` VARCHAR(64) NOT NULL,
+  \`product_id\` VARCHAR(64) NULL,
+  \`barcode\` VARCHAR(64) NULL,
+  \`name\` VARCHAR(191) NOT NULL,
+  \`category\` VARCHAR(64) NULL,
+  \`unit_price\` DECIMAL(12, 2) NOT NULL,
+  \`cost_price\` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+  \`quantity\` INT NOT NULL,
+  \`total_price\` DECIMAL(12, 2) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS \`payroll\` (
+  \`id\` VARCHAR(64) NOT NULL PRIMARY KEY,
+  \`employee_name\` VARCHAR(128) NOT NULL,
+  \`employee_role\` VARCHAR(128) NOT NULL,
+  \`period_start\` DATE NOT NULL,
+  \`period_end\` DATE NOT NULL,
+  \`hourly_rate\` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+  \`hours_worked\` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+  \`gross_pay\` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+  \`deduction_sss\` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+  \`deduction_philhealth\` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+  \`deduction_pagibig\` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+  \`deduction_tax\` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+  \`deduction_other\` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+  \`total_deductions\` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+  \`net_pay\` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+  \`status\` ENUM('paid', 'pending') NOT NULL DEFAULT 'paid',
+  \`created_at\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS \`system_logs\` (
+  \`id\` VARCHAR(64) NOT NULL PRIMARY KEY,
+  \`timestamp\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  \`username\` VARCHAR(64) NOT NULL,
+  \`role\` VARCHAR(32) NOT NULL,
+  \`action\` VARCHAR(64) NOT NULL,
+  \`details\` TEXT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS \`settings\` (
+  \`id\` VARCHAR(64) NOT NULL PRIMARY KEY,
+  \`store_name\` VARCHAR(191) NOT NULL DEFAULT 'ARMORTECH DEFENSE & TACTICAL POS',
+  \`store_owners\` VARCHAR(191) NOT NULL DEFAULT 'Maria Labay, Denz Sacay, Jameson Parmis',
+  \`store_address\` TEXT NOT NULL,
+  \`store_contact\` VARCHAR(191) NOT NULL,
+  \`tax_rate\` DECIMAL(5, 2) NOT NULL DEFAULT 12.00,
+  \`gcash_number\` VARCHAR(64) DEFAULT '0917-888-ARMOR',
+  \`maya_number\` VARCHAR(64) DEFAULT '0918-999-TAC',
+  \`maribank_number\` VARCHAR(64) DEFAULT '0919-777-GUNS'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+`;
+
+  const t1 = document.getElementById('sqlCodeSnippet');
+  if (t1) t1.value = supabaseSql;
+  const t2 = document.getElementById('sqlXamppSnippet');
+  if (t2) t2.value = xamppSql;
 }
 
-function copySqlToClipboard() {
-  const txt = document.getElementById('sqlCodeSnippet');
+function copySqlToClipboard(elementId = 'sqlCodeSnippet') {
+  const txt = document.getElementById(elementId);
   if (!txt) return;
   txt.select();
   navigator.clipboard.writeText(txt.value);
-  const btn = document.getElementById('copyBtnText');
-  btn.innerText = 'Copied to Clipboard!';
-  setTimeout(() => { btn.innerText = 'Copy SQL Script'; }, 2000);
-  showToast('SQL schema copied! Open Supabase SQL Editor and click Run.', 'success');
+  showToast('SQL schema copied to clipboard!', 'success');
 }
 
-// --- 24. TOAST NOTIFICATION UTILITY ---
+// --- 25. TOAST NOTIFICATION UTILITY ---
 function showToast(message, type = 'info') {
   const container = document.getElementById('toastContainer');
   if (!container) return;
